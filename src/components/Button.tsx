@@ -1,24 +1,8 @@
-import { useCallback } from "react";
-import { useState } from "react";
-import { ButtonB } from "./ButtonB";
+import { ButtonHTMLAttributes } from "react";
+import "../styles/button.scss";
 
-type ButtonProps = {
-  text?: string;
-  children?: string;
-};
+type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement>;
 
-export function Button({ text = "default", children }: ButtonProps) {
-  let [counter, setCounter] = useState(0);
-
-  const increment = useCallback(() => {
-    console.log("dentro da f.increment - " + counter);
-    setCounter(counter + 1);
-  }, [counter]);
-
-  return (
-    <>
-      <button onClick={increment}>{counter}</button>
-      <ButtonB>ButtonB</ButtonB>
-    </>
-  );
+export function Button(props: ButtonProps) {
+  return <button className="button" {...props} />;
 }
