@@ -1,72 +1,100 @@
+import { Box, Flex, useColorMode, useMediaQuery } from "@chakra-ui/react";
 import { useHistory, useParams } from "react-router-dom";
+import answerImg from "../assets/images/answer.svg";
+import checkImg from "../assets/images/check.svg";
 import deleteImg from "../assets/images/delete.svg";
 import logoImg from "../assets/images/logo.svg";
-import { Button } from "../components/Button";
-import { Question } from "../components/Question";
-import { RoomCode } from "../components/RoomCode";
-import { useRoom } from "../hooks/useRoom";
-import { database } from "../services/firebase";
-import checkImg from "../assets/images/check.svg";
-import answerImg from "../assets/images/answer.svg";
+import logoForDarkImg from "../assets/images/logoForDark.svg";
+import { useRoom } from "../modules/rooms/hooks/useRoom";
+import { roomService } from "../modules/rooms/services";
+import { Button } from "../shared/components/Button/components/Button";
+import { Question } from "../shared/components/Question/components/Question";
+import { RoomCode } from "../shared/components/RoomCode/components/RoomCode";
+import "../shared/styles/room.scss";
 
-import "../styles/room.scss";
 type RoomParams = {
   id: string;
 };
 export function AdminRoom() {
-  // const { user } = useAuth();
+  const [isLargerThan768] = useMediaQuery("(min-width: 768px)");
+  const { colorMode } = useColorMode();
   const params = useParams<RoomParams>();
   const roomId = params.id;
   const { title, questions } = useRoom(roomId);
   const history = useHistory();
 
   async function handleDeleteQuestion(questionId: string) {
-    if (window.confirm("Tem certeza que você deseja excluir esta pergunta?")) {
-      await database.ref(`rooms/${roomId}/questions/${questionId}`).remove();
-    }
+    await roomService.deleteQuestion(questionId, roomId);
   }
 
   async function handleEndRoom() {
-    await database.ref(`rooms/${roomId}`).update({
-      endedAt: new Date(),
-    });
+    await roomService.endRoom(roomId);
     history.push("/");
   }
 
   async function handleCheckQuestionAsAnswered(questionId: string) {
-    await database.ref(`rooms/${roomId}/questions/${questionId}`).update({
-      isAnswered: true,
-    });
+    await roomService.checkQuestionAsAnswered(questionId, roomId);
   }
 
   async function handleHighlightQuestion(questionId: string) {
-    await database.ref(`rooms/${roomId}/questions/${questionId}`).update({
-      isHighlighted: true,
-    });
+    await roomService.highlightQuestion(questionId, roomId);
   }
+
   return (
-    <div id="page-room">
-      <header>
-        <div className="content">
-          <img src={logoImg} alt="logo" />
-          <div>
+    <Box
+      id="page-room"
+      mx="4"
+      flexDirection="column"
+      alignItems="center"
+      justifyContent="center"
+    >
+      <Box
+        as="header"
+        w={["320px", "100%"]}
+        flexDirection={isLargerThan768 ? "row" : "column"}
+        mx="auto"
+        alignItems="center"
+        justifyContent="center"
+      >
+        <Box
+          className="content"
+          display="flex"
+          flexDirection={isLargerThan768 ? "row" : "column"}
+          mx="auto"
+          color="#29292e"
+        >
+          {colorMode === "light" ? (
+            <img src={logoImg} alt="logo letmeask" />
+          ) : (
+            <img src={logoForDarkImg} alt="logo letmeask" />
+          )}
+          <Box
+            flexDirection={isLargerThan768 ? "row" : "column"}
+            color="#29292e"
+          >
             <RoomCode code={roomId} />
             <Button isOutlined onClick={handleEndRoom}>
               Encerrar sala
             </Button>
-          </div>
-        </div>
-      </header>
+          </Box>
+        </Box>
+      </Box>
 
       <main>
-        <div className="room-title">
+        <Flex
+          className="room-title"
+          w={["320px", "100%"]}
+          alignItems="center"
+          justifyContent="center"
+          mx="auto"
+        >
           <h1>Sala {title}</h1>
           {questions.length > 1 ? (
             <span>{questions.length} perguntas</span>
           ) : (
             <span>{questions.length} pergunta</span>
           )}
-        </div>
+        </Flex>
 
         <div className="question-list">
           {questions.map((question) => (
@@ -103,6 +131,6 @@ export function AdminRoom() {
           ))}
         </div>
       </main>
-    </div>
+    </Box>
   );
 }

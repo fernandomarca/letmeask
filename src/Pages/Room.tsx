@@ -1,25 +1,37 @@
+import {
+  Box,
+  Flex,
+  Text,
+  Textarea,
+  useColorMode,
+  useColorModeValue,
+  useMediaQuery,
+} from "@chakra-ui/react";
 import { FormEvent, useState } from "react";
 import { useParams } from "react-router-dom";
 import logoImg from "../assets/images/logo.svg";
-import { Button } from "../components/Button";
-import { Question } from "../components/Question";
-import { RoomCode } from "../components/RoomCode";
-import { useAuth } from "../hooks/useAuth";
-import { useRoom } from "../hooks/useRoom";
-import { database } from "../services/firebase";
-
-import "../styles/room.scss";
+import logoForDarkImg from "../assets/images/logoForDark.svg";
+import { useRoom } from "../modules/rooms/hooks/useRoom";
+import { roomService } from "../modules/rooms/services";
+import { useAuth } from "../modules/users/hooks/useAuth";
+import { Button } from "../shared/components/Button/components/Button";
+import { Question } from "../shared/components/Question/components/Question";
+import { RoomCode } from "../shared/components/RoomCode/components/RoomCode";
+import "../shared/styles/room.scss";
 
 type RoomParams = {
   id: string;
 };
 export function Room() {
+  const color = useColorModeValue("#29292e", "white");
+  const bgColor = useColorModeValue("#fefefe", "");
+  const { colorMode } = useColorMode();
+  const [isLargerThan768] = useMediaQuery("(min-width: 768px)");
   const { user } = useAuth();
   const [newQuestion, setNewQuestion] = useState("");
   const params = useParams<RoomParams>();
   const roomId = params.id;
   const { title, questions } = useRoom(roomId);
-
   async function handleSendQuestion(event: FormEvent) {
     event.preventDefault();
     if (newQuestion.trim() === "") {
@@ -40,7 +52,7 @@ export function Room() {
       isAnswered: false,
     };
 
-    await database.ref(`rooms/${roomId}/questions`).push(question);
+    await roomService.sendQuestionService(roomId, question);
     setNewQuestion("");
   }
 
@@ -50,45 +62,80 @@ export function Room() {
   ) {
     if (likeId) {
       //remover like
-      await database
-        .ref(`rooms/${roomId}/questions/${questionId}/likes/${likeId}`)
-        .remove();
+      await roomService.removeLikeQuestion(roomId, questionId, likeId);
     } else {
-      await database.ref(`rooms/${roomId}/questions/${questionId}/likes`).push({
-        authorId: user?.id,
-      });
+      await roomService.likeQuestion(roomId, questionId, user);
     }
   }
 
   return (
-    <div id="page-room">
-      <header>
-        <div className="content">
-          <img src={logoImg} alt="logo" />
+    <Box
+      id="page-room"
+      mx="4"
+      flexDirection="column"
+      alignItems="center"
+      justifyContent="center"
+    >
+      <Box
+        as="header"
+        w={["320px", "100%"]}
+        flexDirection={isLargerThan768 ? "row" : "column"}
+        mx="auto"
+        alignItems="center"
+        justifyContent="center"
+      >
+        <Box
+          className="content"
+          color="#29292e"
+          display="flex"
+          flexDirection={isLargerThan768 ? "row" : "column"}
+          mx="auto"
+        >
+          {colorMode === "light" ? (
+            <img src={logoImg} alt="logo letmeask" />
+          ) : (
+            <img src={logoForDarkImg} alt="logo letmeask" />
+          )}
           <RoomCode code={roomId} />
-        </div>
-      </header>
+        </Box>
+      </Box>
 
       <main>
-        <div className="room-title">
-          <h1>Sala {title}</h1>
+        <Flex
+          className="room-title"
+          w={["320px", "100%"]}
+          alignItems="center"
+          justifyContent="center"
+          mx="auto"
+        >
+          <Text color={color} as="h1">
+            Sala {title}
+          </Text>
           {questions.length > 1 ? (
             <span>{questions.length} perguntas</span>
           ) : (
             <span>{questions.length} pergunta</span>
           )}
-        </div>
+        </Flex>
         <form onSubmit={(event) => handleSendQuestion(event)}>
-          <textarea
+          <Textarea
+            bg={bgColor}
             placeholder="O que você quer perguntar?"
             onChange={(event) => setNewQuestion(event.target.value)}
             value={newQuestion}
+            w={["310px", "100%"]}
+            alignItems="center"
+            justifyContent="center"
+            mx="auto"
+            _placeholder={{ color: "#29292e" }}
           />
           <div className="form-footer">
             {user ? (
               <div className="user-info">
                 <img src={user.avatar} alt={user.name} />
-                <span>{user.name}</span>
+                <Text as="span" color={color}>
+                  {user.name}
+                </Text>
               </div>
             ) : (
               <span>
@@ -141,6 +188,6 @@ export function Room() {
           ))}
         </div>
       </main>
-    </div>
+    </Box>
   );
 }

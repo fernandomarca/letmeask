@@ -1,12 +1,6 @@
 import { createContext, ReactNode, useEffect, useState } from "react";
-import { auth, firebase } from "../services/firebase";
-
-type User = {
-  id: string;
-  name: string;
-  avatar: string;
-  email: string | null;
-};
+import { User } from "../models/user";
+import { auth, firebase } from "../../../shared/infra/services/firebase";
 
 type AuthContextType = {
   user: User | undefined;
